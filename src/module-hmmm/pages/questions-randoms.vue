@@ -64,7 +64,7 @@
       />
     </el-row>
 
-    <el-dialog title="题目预览" :visible="PopUps" @close="PopUps=false ,showHide=false ">
+    <el-dialog title="题目预览" :visible="PopUps" @close="PopUps=false ,showHide=false , options=[] ">
       <el-row :gutter="50" style="line-height:36px">
         <el-col :span="6"><div class="grid-content bg-purple">【题型】 :{{form.questionType==='1'?'单选':(form.questionType==='2'?'多选':'简答')}}</div></el-col>
         <el-col :span="6"><div class="grid-content bg-purple">【编号】 :{{form.id}}</div></el-col>
@@ -80,10 +80,14 @@
       <el-row style="border-bottom: 1px solid #333 ;border-top: 1px solid #333">
         <div style="padding-top: 10px; padding-bottom: 10px" >【题干】: <span style="color: #409EFF" v-html="form.question"></span> </div>
         <div  style="padding-top: 10px;">{{form.questionType==='1'?'单选选项：（以下选中的选项为正确答案）':(form.questionType==='2'?'多选选项：（以下选中的选项为正确答案）':'简答选项：（以下选中的选项为正确答案）')}}  </div>
-        <div v-if="true" >
-          <el-checkbox-group v-model="options">
-            <el-checkbox   v-for="item in form.options" :label="item.title" true-label="item." :key="item.id" style="display: block; padding-top: 10px" >{{item.title}}</el-checkbox >
-          </el-checkbox-group>
+        <div v-if="true" style="color: #409EFF">
+         <el-table :data="dataColor">
+           <el-table-column :prop="a" selectable="false">
+             <el-checkbox-group style="color: #409EFF" v-model="options">
+               <el-checkbox   v-for="item in form.options" :label="item.title" :checked="item.isRight"  :key="item.id" style="display: block; padding-top: 10px; color:#409EFF " >{{item.title}}</el-checkbox >
+             </el-checkbox-group>
+           </el-table-column>
+         </el-table>
         </div>
       </el-row>
       <el-row style="padding-top: 10px; padding-bottom: 10px">
@@ -119,6 +123,7 @@ import { detail, randoms, removeRandoms } from '@/api/hmmm/questions'
 export default {
   data () {
     return {
+      dataColor: [{ a: 1 }],
       //
       options: [],
       // 视频
@@ -204,10 +209,6 @@ export default {
     this.randomsList()
   },
   methods: {
-    // changeFn
-    changeFn (value) {
-      console.log(value)
-    },
     // 视频
     clickChowHide () {
       this.showHide = true
@@ -315,5 +316,9 @@ export default {
 }
 .row-bg {
   padding: 10px 0;
+}
+.el-checkbox__input.is-disabled+span.el-checkbox__label {
+  color: #409EFF;
+   cursor: not-allowed;
 }
 </style>
