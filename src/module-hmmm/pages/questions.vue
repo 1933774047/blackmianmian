@@ -259,7 +259,7 @@
           label="操作"
           width="200">
           <template v-slot="{ row }">
-            <el-button type="primary"  icon="el-icon-view" circle plain></el-button>
+            <el-button type="primary" @click="clickView(row)" icon="el-icon-view" circle plain></el-button>
             <el-button type="success" icon="el-icon-edit" circle plain></el-button>
             <el-button type="danger" @click="clickDelete(row)" icon="el-icon-delete" circle plain></el-button>
             <el-button type="warning" @click="clickCheck(row.id)" icon="el-icon-check" circle plain></el-button>
@@ -278,9 +278,47 @@
         @size-change="hSizeChange"
       />
     </el-row>
-    <el-dialog>
-
+    <el-dialog title="题目预览" :visible="PopUps" @close="PopUps=false ,showHide=false ">
+      <el-row :gutter="50" style="line-height:36px">
+        <el-col :span="6"><div class="grid-content bg-purple">【题型】 :{{form.questionType==='1'?'单选':(form.questionType==='2'?'多选':'简答')}}</div></el-col>
+        <el-col :span="6"><div class="grid-content bg-purple">【编号】 :{{form.id}}</div></el-col>
+        <el-col :span="6"><div class="grid-content bg-purple">【难度】 :{{form.difficulty ==='1'?'简单':(form.difficulty==='2'?'一般':'困难')}}</div></el-col>
+        <el-col :span="6"><div class="grid-content bg-purple">【标签】 :{{form.tags}}</div></el-col>
+      </el-row>
+      <el-row :gutter="50" style="line-height:36px">
+        <el-col :span="6"><div class="grid-content bg-purple">【学科】 :{{form.subject}}</div></el-col>
+        <el-col :span="6"><div class="grid-content bg-purple">【目录】 :{{form.catalog}}</div></el-col>
+        <el-col :span="6"><div class="grid-content bg-purple">【方向】 :{{form.direction}}</div></el-col>
+        <el-col :span="6"><div class="grid-content bg-purple"></div></el-col>
+      </el-row>
+      <el-row style="border-bottom: 1px solid #333 ;border-top: 1px solid #333">
+        <div style="padding-top: 10px; padding-bottom: 10px" >【题干】: <span style="color: #409EFF" v-html="form.question"></span> </div>
+        <div  style="padding-top: 10px; padding-bottom: 100px">{{form.questionType==='1'?'单选选项：（以下选中的选项为正确答案）':(form.questionType==='2'?'多选选项：（以下选中的选项为正确答案）':'简答选项：（以下选中的选项为正确答案）')}}  </div>
+      </el-row>
+      <el-row style="padding-top: 10px; padding-bottom: 10px">
+        <div >【参考答案】:   <el-button @click="clickChowHide()" type="danger" size="medium">视频答案预览</el-button>
+        </div>
+        <div class='demo' v-show="showHide">
+            <div class='demo' >
+              <video-player class="video-player vjs-custom-skin"
+                            ref="videoPlayer"
+                            :playsinline="true"
+                            :options="playerOptions">
+              </video-player>
+            </div>
+        </div>
+      </el-row>
+      <el-row style="border-bottom: 1px solid #333 ;border-top: 1px solid #333">
+        <div style="padding-top: 20px; padding-bottom: 20px">【答案解析】:{{form.remarks}}  </div>
+      </el-row>
+      <el-row style="border-bottom: 1px solid #333 ">
+      <div style="padding-top: 10px; padding-bottom: 20px">【题目备注】:{{form.remarks}}   </div>
+    </el-row>
+      <el-row style="padding-left:90%;padding-top: 10px;">
+        <el-button  type="primary" @click="PopUps=false">关闭</el-button>
+      </el-row>
     </el-dialog>
+
   </div>
 </template>
 
@@ -296,6 +334,32 @@ import { choiceAdd, choicePublish, list, remove } from '@/api/hmmm/questions'
 export default {
   data () {
     return {
+      // 视频
+      showHide: false,
+      // 弹窗
+      PopUps: false,
+      playerOptions: {
+        playbackRates: [0.5, 1.0, 1.5, 2.0], // 可选的播放速度
+        autoplay: false, // 如果为true,浏览器准备好时开始回放。
+        muted: false, // 默认情况下将会消除任何音频。
+        loop: false, // 是否视频一结束就重新开始。
+        preload: 'auto', // 建议浏览器在<video>加载元素后是否应该开始下载视频数据。auto浏览器选择最佳行为,立即开始加载视频（如果浏览器支持）
+        language: 'zh-CN',
+        aspectRatio: '16:9', // 将播放器置于流畅模式，并在计算播放器的动态大小时使用该值。值应该代表一个比例 - 用冒号分隔的两个数字（例如"16:9"或"4:3"）
+        fluid: true, // 当true时，Video.js player将拥有流体大小。换句话说，它将按比例缩放以适应其容器。
+        sources: [{
+          type: 'video/mp4', // 类型
+          src: 'http://vjs.zencdn.net/v/oceans.mp4' // url地址
+        }],
+        poster: '', // 封面地址
+        notSupportedMessage: '此视频暂无法播放，请稍后再试', // 允许覆盖Video.js无法播放媒体源时显示的默认信息。
+        controlBar: {
+          timeDivider: true, // 当前时间和持续时间的分隔符
+          durationDisplay: true, // 显示持续时间
+          remainingTimeDisplay: false, // 是否显示剩余时间功能
+          fullscreenToggle: true // 是否显示全屏按钮
+        }
+      },
       pageParams: {
         // 页码  每页几条
         page: 1,
@@ -321,6 +385,9 @@ export default {
       // 三级标签
       SubjectList3: [],
       form: {
+        videoURL: '',
+        question: '',
+        id: '',
         // 学科
         region: '',
         // 二级目录
@@ -341,7 +408,6 @@ export default {
         remarks: '',
         // 企业简称
         Enterprise: ''
-
       },
       tableData: [
         {
@@ -367,6 +433,25 @@ export default {
     this.tableDataList()
   },
   methods: {
+    // 视频
+    clickChowHide () {
+      this.showHide = true
+    },
+    // 预览
+    clickView (row) {
+      console.log(row)
+      this.PopUps = true
+      this.form.questionType = row.questionType
+      this.form.id = row.id
+      this.form.difficulty = row.difficulty
+      this.form.tags = row.tags
+      this.form.subject = row.subject
+      this.form.catalog = row.catalog
+      this.form.direction = row.direction
+      this.form.question = row.question
+      this.form.remarks = row.remarks
+      this.form.videoURL = row.videoURL
+    },
     // 搜索        form.region
     async searchInput () {
       const res = await list({
@@ -496,4 +581,13 @@ export default {
 .el-pagination__jump{
   margin-left: 0 !important;
 }
+.el-row {
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+.el-col {
+  border-radius: 4px;
+}
+
 </style>
